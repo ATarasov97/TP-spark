@@ -1,0 +1,53 @@
+@import "./../config/globals.scss";
+
+.todo-actionbar {
+  bottom: 0;
+  width: 100%;
+  min-height: 40px;
+  border-top: 1px solid $c-grey-item-border;
+  text-align: center;
+  display: flex;
+}
+  .todo-actionbar_left-items {
+    float: left;
+    align-self: center;
+    font-size: $fs_little;
+    padding-left: $p_todo-actionbar_items;
+    color: $c-grey-filter-font;
+  }
+  .filter-button {
+    flex:1;
+    align-self: center;
+    display: inline-block;
+  }
+    .filter-button_item {
+      cursor: pointer;
+      padding-left: $p_todo-actionbar_items;
+      padding-right: $p_todo-actionbar_items;
+      font-size: $fs_little;
+      color: $c-grey-filter-font;
+      border: 0;
+      background: none;
+      &.__active {
+        border-radius: 2px;
+        border: 1px solid $c-grey-filter-border;
+      }
+    }
+  .todo-actionbar_clear-completed {
+    cursor: pointer;
+    float: right;
+    align-self: center;
+    border: 0;
+    background: none;
+    padding-right: $p_todo-actionbar_items;
+    font-size: $fs_little;
+    color: $c-grey-filter-font;
+    outline: none;
+
+    &.__hide {
+      visibility: hidden;
+    }
+  }
+    .todo-actionbar_clear-completed:focus {
+      background: $c-grey-white;
+    }

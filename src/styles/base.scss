@@ -1,0 +1,13 @@
+@import "./config/globals.scss";
+
+body, h1 {
+  font-family: "Helvetica Neue", "Helvetica", Arial, sans-serif;
+  font-size: $fs_little;
+  background: $c-grey-background;
+}
+.todo-main-wrapper {
+    min-width: $minw_main;
+    max-width: $maxw_main;
+    margin: 0 auto;
+    padding: 0 20px;
+  }

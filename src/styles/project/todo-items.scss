@@ -1,0 +1,102 @@
+@import "./../config/globals.scss";
+
+.todo-items {
+  position: relative;
+  min-height: 300px;
+  &::after {
+    content: '';
+    border-bottom: 1px solid $c-grey-item-border;
+    background: none;
+    position: absolute;
+    width: 100%;
+  }
+}
+  .todo-item{
+    cursor: pointer;
+    position: relative;
+    min-height: 60px;
+    border-top: 1px solid $c-grey-item-border;
+    overflow: hidden;
+    display: flex;
+    &:hover {
+      background: $c-grey-white;
+    }
+      &:hover .todo-item_close {
+        visibility: visible;
+      }
+
+    &.__hide {
+      display: none;
+    }
+
+    &.__ready .todo-item_text {
+      text-decoration: line-through;
+      color: $c-grey;
+    }
+
+    &.__ready .input-checkbox_visual {
+      border: 1px solid $c-green-success;
+      background: url('../../images/icons/completed.png') no-repeat center center;
+    }
+  }
+    .todo-item_ready-mark{
+      float: left;
+      align-self: center;
+      order: 1;
+      position: relative;
+      width: 60px;
+      height: 60px;
+    }
+      .input-checkbox_target {
+        cursor: pointer;
+        position: absolute;
+        opacity: 0;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+      }
+      .input-checkbox_visual {
+        position: absolute;
+        top:50%;
+        left: 50%;
+        margin: (-$h_todo-item-ready-mark-icon / 2) (-$w_todo-item-ready-mark-icon / 2);
+        width: $w_todo-item-ready-mark-icon;
+        height: $h_todo-item-ready-mark-icon;
+        border-radius: 50%;
+        border: 1px solid $c-grey-item-border;
+      }
+    .todo-item_close {
+      cursor: pointer;
+      visibility: hidden;
+      float: right;
+      align-self: flex-end;
+      order: 3;
+      position: relative;
+      height: 60px;
+      width: 42px;
+      border: 0;
+      background: none;
+      outline: none;
+      display: inline;
+    }
+      .todo-item_close_icon {
+        background: url('../../images/icons/close.png') no-repeat 0 0;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: $w_todo-item_close-icon;
+        height: $h_todo-item_close-icon;
+        margin: (-$h_todo-item_close-icon / 2) (-$w_todo-item_close-icon / 2);
+        pointer-events: none;
+      }
+    .todo-item_text {
+      align-self: center;
+      order: 2;
+      width: 100%;
+      overflow: hidden;
+      font-size: $fs_xx-large;
+      color: $c-grey-dark;
+      outline: none;
+    }
