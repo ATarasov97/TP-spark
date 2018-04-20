@@ -4,6 +4,7 @@
  */
 function TodosContainer(root) {
     this._root = root;
+    this._todosContainer = root.querySelector('.todo-container');
 }
 
 /**

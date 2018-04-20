@@ -1,5 +1,6 @@
 const ExtendEventable = require('../utils/ExtendEventable');
 const TodoModel = require('./TodoModel');
+const api = require('../utils/Requests');
 
 /**
  * @param {Array.<TodoModel>} dataItems
@@ -38,50 +39,68 @@ TodosListModel.prototype.getLeftItemsNumber = function () {
  */
 TodosListModel.prototype.onChange = function (handler, ctx) {
     this
-        .on('todoAdd', handler, this)
-        .on('todoRemoved', handler, this)
-        .on('todoChange', handler, this)
-        .on('modelReadyChanged', function (model) {
-            if (model.get('isReady') && this._left !== 0) {
-                this._left -= 1;
-            } else {
-                this._left += 1;
-            }
-            this.trigger('todoChange');
-            handler.call(ctx);
-        }, this)
-        .on('modelRemoved', function (model) {
-            this.remove(model.get('id'));
-            this.trigger('todoChange');
-            handler.call(ctx);
-        }, this)
-        .on('modelChanged', function () {
-            this.trigger('todoChange');
-            handler.call(ctx)
-        }, this);
+            .on('todoAdd', handler, this)
+            .on('todoRemoved', handler, this)
+            .on('todoChange', handler, this)
+            .on('modelReadyChanged', model => {
+                if (model.get('isReady') && this._left !== 0) {
+                    this._left -= 1;
+                } else {
+                    this._left += 1;
+                }
+                this.trigger('todoChange');
+                handler.call(ctx);
+            }, this)
+            .on('modelRemoved', model => {
+                this.remove(model.get('id'));
+                this.trigger('todoChange');
+                handler.call(ctx);
+            }, this)
+            .on('modelChanged', () => {
+                this.trigger('todoChange');
+                handler.call(ctx)
+            }, this);
 
     return this;
 };
 
 /**
- *
  * @param {Object} inputData
  * @returns {TodosListModel}
  */
 TodosListModel.prototype.add = function (inputData) {
     let model = new TodoModel(Object.assign({id: this._itemIds++}, inputData));
+    this._setupModel(model);
 
-    model.onAnyChange(function (data) {
+    api.addItem(model, response => {
+        model.set('id', response['id']);
+        this.trigger('todoAdd', model);
+    });
+
+    return this;
+};
+
+TodosListModel.prototype.addLoaded = function (data) {
+    let model = new TodoModel(Object.assign({id: data['id'], text: data['text'], isReady: data['checked']}));
+    this._setupModel(model);
+
+    this.trigger('todoAdd', model);
+
+    return this;
+};
+
+TodosListModel.prototype._setupModel = function (model) {
+    model.onAnyChange(data => {
         switch (data['field']) {
-            case 'isReady':
-                this.trigger('modelReadyChanged', model);
-                break;
-            case 'deleted':
-                this.trigger('modelRemoved', model);
-                break;
-            default:
-                this.trigger('modelChanged', model);
-                break;
+        case 'isReady':
+            this.trigger('modelReadyChanged', model);
+            break;
+        case 'deleted':
+            this.trigger('modelRemoved', model);
+            break;
+        default:
+            this.trigger('modelChanged', model);
+            break;
         }
     }, this);
 
@@ -90,9 +109,6 @@ TodosListModel.prototype.add = function (inputData) {
     }
 
     this._itemModels.push(model);
-
-    this.trigger('todoAdd', model);
-    return this;
 };
 
 /**
@@ -138,7 +154,7 @@ TodosListModel.prototype.remove = function (id) {
  */
 TodosListModel.prototype.clearCompleted = function () {
     let copyModels = this.getList().slice();
-    copyModels.forEach(function (model) {
+    copyModels.forEach(model => {
         if (model.get('isReady')) {
             this.remove(model.get('id'));
         }

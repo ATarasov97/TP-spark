@@ -1,5 +1,6 @@
 const ExtendEventable = require('../utils/ExtendEventable');
 const TemplateEngine = require('../utils/TemplateEngine');
+const api = require('../utils/Requests');
 
 /**
  * @extends {EventListener}
@@ -23,6 +24,7 @@ function TodoItem(model) {
 
     this._readyMark.addEventListener('change', this);
     this._remove.addEventListener('click', this);
+    this._text.addEventListener('blur', this);
 }
 
 ExtendEventable(TodoItem);
@@ -44,6 +46,7 @@ TodoItem.prototype.render = function (parent) {
  */
 TodoItem.prototype._onSetText = function (newText) {
     if (this._model.get('text') !== newText) {
+        api.setText(this._model, newText);
         this._text.innerText = newText;
         this._model.set('text', newText);
     }
@@ -71,6 +74,7 @@ TodoItem.prototype._manageReadyModifier = function (isReady) {
  */
 TodoItem.prototype.changeReady = function (isReady) {
     if (isReady !== this._model.get('isReady')) {
+        api.setState(this._model, isReady);
         this._model.set('isReady', isReady);
         this._manageReadyModifier(isReady);
         this.trigger('todoChange', this._model);

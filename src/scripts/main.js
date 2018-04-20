@@ -6,6 +6,7 @@ const TodoAddbar = require('./units/TodosAddbar');
 const TodosList = require('./units/TodosList');
 const TodosActionbar = require('./units/TodosActionbar');
 const viewState = require('./views/ViewState');
+const api = require('./utils/Requests');
 
 function init() {
     const mainWrapper = document.querySelector('.todo-main-wrapper');
@@ -15,11 +16,11 @@ function init() {
     const todosActionbar = new TodosActionbar(mainWrapper.querySelector('.todo-actionbar'));
     const todosListModel = new TodosListModel([]);
 
-    viewState.onChange(function (data) {
+    viewState.onChange(data => {
         todosList.filterItems(data['filter']);
     });
 
-    todosListModel.onChange(function () {
+    todosListModel.onChange(() => {
         todosContainer.setVisibility(todosListModel.getList().length !== 0);
 
         let leftItemsNumber = todosListModel.getLeftItemsNumber();
@@ -29,35 +30,33 @@ function init() {
     });
 
     todoAddbar
-        .on('todoCreated', function (inputData) {
-            todosListModel.add(inputData);
-        })
-        .on('selectAll', function () {
-            todosListModel.getList()
-                .filter(function (model) {
-                    return !model.get('isReady');
-                })
-                .forEach(function (model) {
-                    model.set('isReady', true);
-                })
-        });
+            .on('todoCreated', inputData => todosListModel.add(inputData))
+            .on('selectAll', () => {
+                api.checkAll(todosListModel, () => {
+                    todosListModel.getList()
+                            .filter(model => !model.get('isReady'))
+                            .forEach(model => model.set('isReady', true));
+                });
+            });
 
     todosListModel
-        .on('todoAdd', function (model) {
-            todosList.addTodo(model);
-        })
-        .on('todoRemove', function (model) {
-            todosList.remove(model);
-        })
-        .on('todoChange', function () {
-            todosList.filterItems();
-        });
+            .on('todoAdd', model => todosList.addTodo(model))
+            .on('todoRemove', model => {
+                api.removeItem(model, todosList, () => todosList.remove(model));
+            })
+            .on('todoChange', () => {
+                todosList.filterItems();
+            });
 
     todosActionbar
-        .on('clearCompleted', function () {
-            todosListModel.clearCompleted();
-        })
-        .on('filterSelected', function (filter) {
-            viewState.setFilter(filter);
-        });
+            .on('clearCompleted', () => {
+                todosListModel.clearCompleted();
+            })
+            .on('filterSelected', filter => {
+                viewState.setFilter(filter);
+            });
+
+    api.loadData(response => response
+            .sort((a, b) => a['id'] - b['id'])
+            .forEach(todo => todosListModel.addLoaded(todo)));
 }

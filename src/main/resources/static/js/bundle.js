@@ -60,14 +60,14 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 3);
+/******/ 	return __webpack_require__(__webpack_require__.s = 5);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-const Eventable = __webpack_require__(1);
+const Eventable = __webpack_require__(2);
 
 /**
  * @param {Function} Extendable
@@ -85,6 +85,106 @@ module.exports = ExtendEventable;
 
 /***/ }),
 /* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+const TemplateEngine = __webpack_require__(3);
+
+const todoPath = '/todo';
+
+function Api() {
+}
+
+Api.prototype.loadData = function (callback) {
+    let req = new XMLHttpRequest();
+    req.open('GET', `${todoPath}/items`, true);
+    req.send();
+    req.onload = function () {
+        if (req.status === 200) {
+            let todos = JSON.parse(req.responseText);
+            callback(todos);
+        } else {
+            alert(`Error: ${req.responseText}`);
+        }
+    }
+};
+
+Api.prototype.addItem = function (model, callback) {
+    let requestBody = {};
+    requestBody['text'] = model.get('text');
+    requestBody['checked'] = model.get('isReady');
+
+    let req = new XMLHttpRequest();
+    req.open('POST', todoPath, true);
+    req.setRequestHeader("Content-Type", "application/json");
+    req.send(JSON.stringify(requestBody));
+
+    req.onload = function () {
+        if (req.status === 200) {
+            let response = JSON.parse(req.responseText);
+            callback(response);
+        } else {
+            alert(`Error: ${req.responseText}`);
+        }
+    }
+};
+
+Api.prototype.removeItem = function (model, todosList, callback) {
+    let req = new XMLHttpRequest();
+    req.open('DELETE', todoPath + "/" + model.get('id'), true);
+    req.send();
+    req.onload = function () {
+        if (req.status === 200) {
+            callback();
+        } else {
+            alert(`Error: ${req.responseText}`)
+        }
+    }
+};
+
+Api.prototype.setState = function (model, state) {
+    let req = new XMLHttpRequest();
+    req.open('PATCH', `${todoPath}/${model.get('id')}/checked`, true);
+    req.setRequestHeader("Content-Type", "application/json");
+    req.send(JSON.stringify({'checked': state}));
+    req.onload = function () {
+        if (req.status !== 200) {
+            alert(`Error: ${req.responseText}`);
+        }
+    }
+};
+
+Api.prototype.setText = function (model, text) {
+    let req = new XMLHttpRequest();
+    req.open('PATCH', `${todoPath}/${model.get('id')}/text`, true);
+    req.setRequestHeader("Content-Type", "application/json");
+    req.send(JSON.stringify({'text': text}));
+    req.onload = function () {
+        if (req.status !== 200) {
+            alert(`Error: ${req.responseText}`);
+        }
+    }
+};
+
+Api.prototype.checkAll = function (todosListModel, callback) {
+    let req = new XMLHttpRequest();
+    req.open('PATCH', `${todoPath}/checkAll`, true);
+    req.send();
+    req.onload = function () {
+        if (req.status === 200) {
+            callback();
+        } else {
+            alert(`Error: ${req.responseText}`);
+        }
+    }
+};
+
+let api = new Api();
+
+module.exports = api;
+
+
+/***/ }),
+/* 2 */
 /***/ (function(module, exports) {
 
 function Eventable() {
@@ -139,7 +239,50 @@ module.exports = Eventable;
 
 
 /***/ }),
-/* 2 */
+/* 3 */
+/***/ (function(module, exports) {
+
+let divElement = document.createElement('div');
+
+function getTemplateRootNode(scriptId) {
+    let script = document.getElementById(scriptId);
+    divElement.innerHTML = script.innerHTML;
+
+    let result = divElement.children[0];
+    divElement.removeChild(result);
+
+    return result;
+}
+
+let templateEngine = {
+    todoItem: function (data) {
+        let root = getTemplateRootNode('itemTemplate');
+        let readyMark = root.querySelector('.input-checkbox_target');
+        let remove = root.querySelector('.todo-item_close');
+        let text = root.querySelector('.todo-item_text');
+
+        if (data.text) {
+            text.innerText = data.text;
+        }
+
+        if (data.isReady) {
+            readyMark.checked = true;
+        }
+
+        return {
+            root: root,
+            text: text,
+            readyMark: readyMark,
+            remove: remove
+        };
+    }
+};
+
+module.exports = templateEngine;
+
+
+/***/ }),
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 const ExtendEventable = __webpack_require__(0);
@@ -177,17 +320,18 @@ module.exports = viewState;
 
 
 /***/ }),
-/* 3 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 document.addEventListener('DOMContentLoaded', init);
 
-const TodosListModel = __webpack_require__(4);
-const TodosContainer = __webpack_require__(6);
-const TodoAddbar = __webpack_require__(7);
-const TodosList = __webpack_require__(8);
-const TodosActionbar = __webpack_require__(11);
-const viewState = __webpack_require__(2);
+const TodosListModel = __webpack_require__(6);
+const TodosContainer = __webpack_require__(8);
+const TodoAddbar = __webpack_require__(9);
+const TodosList = __webpack_require__(10);
+const TodosActionbar = __webpack_require__(12);
+const viewState = __webpack_require__(4);
+const api = __webpack_require__(1);
 
 function init() {
     const mainWrapper = document.querySelector('.todo-main-wrapper');
@@ -197,11 +341,11 @@ function init() {
     const todosActionbar = new TodosActionbar(mainWrapper.querySelector('.todo-actionbar'));
     const todosListModel = new TodosListModel([]);
 
-    viewState.onChange(function (data) {
+    viewState.onChange(data => {
         todosList.filterItems(data['filter']);
     });
 
-    todosListModel.onChange(function () {
+    todosListModel.onChange(() => {
         todosContainer.setVisibility(todosListModel.getList().length !== 0);
 
         let leftItemsNumber = todosListModel.getLeftItemsNumber();
@@ -211,46 +355,45 @@ function init() {
     });
 
     todoAddbar
-        .on('todoCreated', function (inputData) {
-            todosListModel.add(inputData);
-        })
-        .on('selectAll', function () {
-            todosListModel.getList()
-                .filter(function (model) {
-                    return !model.get('isReady');
-                })
-                .forEach(function (model) {
-                    model.set('isReady', true);
-                })
-        });
+            .on('todoCreated', inputData => todosListModel.add(inputData))
+            .on('selectAll', () => {
+                api.checkAll(todosListModel, () => {
+                    todosListModel.getList()
+                            .filter(model => !model.get('isReady'))
+                            .forEach(model => model.set('isReady', true));
+                });
+            });
 
     todosListModel
-        .on('todoAdd', function (model) {
-            todosList.addTodo(model);
-        })
-        .on('todoRemove', function (model) {
-            todosList.remove(model);
-        })
-        .on('todoChange', function () {
-            todosList.filterItems();
-        });
+            .on('todoAdd', model => todosList.addTodo(model))
+            .on('todoRemove', model => {
+                api.removeItem(model, todosList, () => todosList.remove(model));
+            })
+            .on('todoChange', () => {
+                todosList.filterItems();
+            });
 
     todosActionbar
-        .on('clearCompleted', function () {
-            todosListModel.clearCompleted();
-        })
-        .on('filterSelected', function (filter) {
-            viewState.setFilter(filter);
-        });
+            .on('clearCompleted', () => {
+                todosListModel.clearCompleted();
+            })
+            .on('filterSelected', filter => {
+                viewState.setFilter(filter);
+            });
+
+    api.loadData(response => response
+            .sort((a, b) => a['id'] - b['id'])
+            .forEach(todo => todosListModel.addLoaded(todo)));
 }
 
 
 /***/ }),
-/* 4 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 const ExtendEventable = __webpack_require__(0);
-const TodoModel = __webpack_require__(5);
+const TodoModel = __webpack_require__(7);
+const api = __webpack_require__(1);
 
 /**
  * @param {Array.<TodoModel>} dataItems
@@ -289,50 +432,68 @@ TodosListModel.prototype.getLeftItemsNumber = function () {
  */
 TodosListModel.prototype.onChange = function (handler, ctx) {
     this
-        .on('todoAdd', handler, this)
-        .on('todoRemoved', handler, this)
-        .on('todoChange', handler, this)
-        .on('modelReadyChanged', function (model) {
-            if (model.get('isReady') && this._left !== 0) {
-                this._left -= 1;
-            } else {
-                this._left += 1;
-            }
-            this.trigger('todoChange');
-            handler.call(ctx);
-        }, this)
-        .on('modelRemoved', function (model) {
-            this.remove(model.get('id'));
-            this.trigger('todoChange');
-            handler.call(ctx);
-        }, this)
-        .on('modelChanged', function () {
-            this.trigger('todoChange');
-            handler.call(ctx)
-        }, this);
+            .on('todoAdd', handler, this)
+            .on('todoRemoved', handler, this)
+            .on('todoChange', handler, this)
+            .on('modelReadyChanged', model => {
+                if (model.get('isReady') && this._left !== 0) {
+                    this._left -= 1;
+                } else {
+                    this._left += 1;
+                }
+                this.trigger('todoChange');
+                handler.call(ctx);
+            }, this)
+            .on('modelRemoved', model => {
+                this.remove(model.get('id'));
+                this.trigger('todoChange');
+                handler.call(ctx);
+            }, this)
+            .on('modelChanged', () => {
+                this.trigger('todoChange');
+                handler.call(ctx)
+            }, this);
 
     return this;
 };
 
 /**
- *
  * @param {Object} inputData
  * @returns {TodosListModel}
  */
 TodosListModel.prototype.add = function (inputData) {
     let model = new TodoModel(Object.assign({id: this._itemIds++}, inputData));
+    this._setupModel(model);
 
-    model.onAnyChange(function (data) {
+    api.addItem(model, response => {
+        model.set('id', response['id']);
+        this.trigger('todoAdd', model);
+    });
+
+    return this;
+};
+
+TodosListModel.prototype.addLoaded = function (data) {
+    let model = new TodoModel(Object.assign({id: data['id'], text: data['text'], isReady: data['checked']}));
+    this._setupModel(model);
+
+    this.trigger('todoAdd', model);
+
+    return this;
+};
+
+TodosListModel.prototype._setupModel = function (model) {
+    model.onAnyChange(data => {
         switch (data['field']) {
-            case 'isReady':
-                this.trigger('modelReadyChanged', model);
-                break;
-            case 'deleted':
-                this.trigger('modelRemoved', model);
-                break;
-            default:
-                this.trigger('modelChanged', model);
-                break;
+        case 'isReady':
+            this.trigger('modelReadyChanged', model);
+            break;
+        case 'deleted':
+            this.trigger('modelRemoved', model);
+            break;
+        default:
+            this.trigger('modelChanged', model);
+            break;
         }
     }, this);
 
@@ -341,9 +502,6 @@ TodosListModel.prototype.add = function (inputData) {
     }
 
     this._itemModels.push(model);
-
-    this.trigger('todoAdd', model);
-    return this;
 };
 
 /**
@@ -389,7 +547,7 @@ TodosListModel.prototype.remove = function (id) {
  */
 TodosListModel.prototype.clearCompleted = function () {
     let copyModels = this.getList().slice();
-    copyModels.forEach(function (model) {
+    copyModels.forEach(model => {
         if (model.get('isReady')) {
             this.remove(model.get('id'));
         }
@@ -401,7 +559,7 @@ module.exports = TodosListModel;
 
 
 /***/ }),
-/* 5 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 const ExtendEventable = __webpack_require__(0);
@@ -476,7 +634,7 @@ module.exports = TodoModel;
 
 
 /***/ }),
-/* 6 */
+/* 8 */
 /***/ (function(module, exports) {
 
 /**
@@ -485,6 +643,7 @@ module.exports = TodoModel;
  */
 function TodosContainer(root) {
     this._root = root;
+    this._todosContainer = root.querySelector('.todo-container');
 }
 
 /**
@@ -511,7 +670,7 @@ module.exports = TodosContainer;
 
 
 /***/ }),
-/* 7 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 const ExtendEventable = __webpack_require__(0);
@@ -583,12 +742,12 @@ module.exports = TodosAddbar;
 
 
 /***/ }),
-/* 8 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 const ExtendEventable = __webpack_require__(0);
-const TodoItem = __webpack_require__(9);
-const viewState = __webpack_require__(2);
+const TodoItem = __webpack_require__(11);
+const viewState = __webpack_require__(4);
 
 /**
  * @param {HTMLElement} root
@@ -622,6 +781,7 @@ TodosList.prototype.getTodosCount = function () {
  */
 TodosList.prototype.addTodo = function (model) {
     let item = new TodoItem(model);
+    item._manageReadyModifier(model.get('isReady'));
     this._items.push(item);
 
     item.on('todoChange', this._onTodoChange, this)
@@ -729,11 +889,12 @@ module.exports = TodosList;
 
 
 /***/ }),
-/* 9 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 const ExtendEventable = __webpack_require__(0);
-const TemplateEngine = __webpack_require__(10);
+const TemplateEngine = __webpack_require__(3);
+const api = __webpack_require__(1);
 
 /**
  * @extends {EventListener}
@@ -757,6 +918,7 @@ function TodoItem(model) {
 
     this._readyMark.addEventListener('change', this);
     this._remove.addEventListener('click', this);
+    this._text.addEventListener('blur', this);
 }
 
 ExtendEventable(TodoItem);
@@ -778,6 +940,7 @@ TodoItem.prototype.render = function (parent) {
  */
 TodoItem.prototype._onSetText = function (newText) {
     if (this._model.get('text') !== newText) {
+        api.setText(this._model, newText);
         this._text.innerText = newText;
         this._model.set('text', newText);
     }
@@ -805,6 +968,7 @@ TodoItem.prototype._manageReadyModifier = function (isReady) {
  */
 TodoItem.prototype.changeReady = function (isReady) {
     if (isReady !== this._model.get('isReady')) {
+        api.setState(this._model, isReady);
         this._model.set('isReady', isReady);
         this._manageReadyModifier(isReady);
         this.trigger('todoChange', this._model);
@@ -861,54 +1025,11 @@ module.exports = TodoItem;
 
 
 /***/ }),
-/* 10 */
-/***/ (function(module, exports) {
-
-let divElement = document.createElement('div');
-
-function getTemplateRootNode(scriptId) {
-    let script = document.getElementById(scriptId);
-    divElement.innerHTML = script.innerHTML;
-
-    let result = divElement.children[0];
-    divElement.removeChild(result);
-
-    return result;
-}
-
-let templateEngine = {
-    todoItem: function (data) {
-        let root = getTemplateRootNode('itemTemplate');
-        let readyMark = root.querySelector('.input-checkbox_target');
-        let remove = root.querySelector('.todo-item_close');
-        let text = root.querySelector('.todo-item_text');
-
-        if (data.text) {
-            text.innerText = data.text;
-        }
-
-        if (data.isReady) {
-            readyMark.checked = true;
-        }
-
-        return {
-            root: root,
-            text: text,
-            readyMark: readyMark,
-            remove: remove
-        };
-    }
-};
-
-module.exports = templateEngine;
-
-
-/***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 const ExtendEventable = __webpack_require__(0);
-const Filter = __webpack_require__(12);
+const Filter = __webpack_require__(13);
 
 /**
  * @extends {EventListener}
@@ -980,11 +1101,11 @@ module.exports = TodosActionbar;
 
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 const ExtendEventable = __webpack_require__(0);
-const Eventable = __webpack_require__(1);
+const Eventable = __webpack_require__(2);
 
 /**
  * @param {HTMLElement} root

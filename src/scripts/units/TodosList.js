@@ -34,6 +34,7 @@ TodosList.prototype.getTodosCount = function () {
  */
 TodosList.prototype.addTodo = function (model) {
     let item = new TodoItem(model);
+    item._manageReadyModifier(model.get('isReady'));
     this._items.push(item);
 
     item.on('todoChange', this._onTodoChange, this)

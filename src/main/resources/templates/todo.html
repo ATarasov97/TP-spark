@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-
+<html xmlns:th="http://www.thymeleaf.org">
 <html lang="en">
 
 <head aria-label="todos">
     <meta charset="utf-8">
     <title>todos</title>
-    <link rel="stylesheet" href="css/default.css"/>
-    <script src="js/bundle.js"></script>
+    <link rel="stylesheet" th:href="@{/css/default.css}"/>
+    <script th:src="@{/js/bundle.js}"></script>
 </head>
 
 <script type="text/html" id="itemTemplate">

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head></head>
+<body>
+<h1>Sign In</h1>
+
+<div th:if="${param.error}">
+    Invalid
+    <label th:text="${param.error[0]}"/>
+</div>
+<form th:action="@{/signin}" method="POST">
+    <div>
+        <label> User: <input type="text" id="name" name="name" th:placeholder="Username"/> </label>
+    </div>
+    <div>
+        <label> Password: <input type="password" id="password" name="password" th:placeholder="Password"/> </label>
+    </div>
+    <div><input name="submit" value="Sign In" type="submit"/></div>
+</form>
+</body>
