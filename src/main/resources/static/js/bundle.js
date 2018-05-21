@@ -710,6 +710,11 @@ TodosAddbar.prototype._onSelectAll = function () {
 TodosAddbar.prototype._onTodoAdd = function () {
     let inputText = this._input.value.trim();
 
+    if (inputText.length > 400) {
+        alert("The number of characters must be less than 400");
+        return;
+    }
+
     if (inputText.length !== 0) {
         this._input.value = '';
         this._input.blur();
@@ -940,6 +945,16 @@ TodoItem.prototype.render = function (parent) {
  */
 TodoItem.prototype._onSetText = function (newText) {
     if (this._model.get('text') !== newText) {
+        if (newText.length > 400) {
+            alert("The number of characters must be less than 400");
+            this._text.innerText = this._model.get('text');
+            return this;
+        }
+        if (newText.trim().length === 0) {
+            alert("Todo can not be empty");
+            this._text.innerText = this._model.get('text');
+            return this;
+        }
         api.setText(this._model, newText);
         this._text.innerText = newText;
         this._model.set('text', newText);

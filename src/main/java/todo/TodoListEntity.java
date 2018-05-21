@@ -7,8 +7,10 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQuery;
 
 @Entity
+@NamedQuery(name = "TodoListEntity.checkAllDone", query = "update TodoListEntity tl set tl.checked=true where tl.user=?1")
 public class TodoListEntity {
 
     @Id

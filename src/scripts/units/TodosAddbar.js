@@ -35,6 +35,11 @@ TodosAddbar.prototype._onSelectAll = function () {
 TodosAddbar.prototype._onTodoAdd = function () {
     let inputText = this._input.value.trim();
 
+    if (inputText.length > 400) {
+        alert("The number of characters must be less than 400");
+        return;
+    }
+
     if (inputText.length !== 0) {
         this._input.value = '';
         this._input.blur();

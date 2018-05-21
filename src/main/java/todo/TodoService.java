@@ -43,11 +43,7 @@ public class TodoService {
     }
 
     public void checkAllDone(UserEntity user) {
-        List<TodoListEntity> todoList = todoRepository.findByUser(user);
-        for(TodoListEntity todo: todoList) {
-            todo.setChecked(true);
-        }
-        todoRepository.saveAll(todoList);
+        todoRepository.checkAllDone(user);
     }
 
 }
